@@ -1,0 +1,35 @@
+# ESP-IDF build output
+build/
+build_*/
+sdkconfig
+sdkconfig.old
+
+# Component Manager
+managed_components/
+dependencies.lock
+
+# CMake / compiler
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+.clangd
+.ccls-cache/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs and temporary
+*.log
+*.tmp
