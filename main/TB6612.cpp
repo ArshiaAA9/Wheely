@@ -63,7 +63,7 @@ void TB6612::Forward() {
     gpio_set_level(m_pins.BIN1, 1);
     gpio_set_level(m_pins.BIN2, 0);
 
-    ESP_LOGI("MOTOR", "Driving forward");
+    ESP_LOGI("MOTOR", "Forward");
 }
 
 void TB6612::Reverse() {
@@ -73,6 +73,7 @@ void TB6612::Reverse() {
 
     gpio_set_level(m_pins.BIN1, 0);
     gpio_set_level(m_pins.BIN2, 1);
+    ESP_LOGI("MOTOR", "Reverse");
 }
 
 void TB6612::TurnRight() {
@@ -84,6 +85,7 @@ void TB6612::TurnRight() {
     // left motor
     gpio_set_level(m_pins.BIN1, 1);
     gpio_set_level(m_pins.BIN2, 0);
+    ESP_LOGI("MOTOR", "TurnRight");
 }
 
 void TB6612::TurnLeft() {
@@ -95,4 +97,29 @@ void TB6612::TurnLeft() {
     // left motor
     gpio_set_level(m_pins.BIN1, 0);
     gpio_set_level(m_pins.BIN2, 1);
+    ESP_LOGI("MOTOR", "TurnLeft");
+}
+
+void TB6612::Brake() {
+    m_state = MotionState::Brake;
+    // right motor
+    gpio_set_level(m_pins.AIN1, 1);
+    gpio_set_level(m_pins.AIN2, 1);
+
+    // left motor
+    gpio_set_level(m_pins.BIN1, 1);
+    gpio_set_level(m_pins.BIN2, 1);
+    ESP_LOGI("MOTOR", "Brake");
+}
+
+void TB6612::Coast() {
+    m_state = MotionState::Coast;
+    // right motor
+    gpio_set_level(m_pins.AIN1, 0);
+    gpio_set_level(m_pins.AIN2, 0);
+
+    // left motor
+    gpio_set_level(m_pins.BIN1, 0);
+    gpio_set_level(m_pins.BIN2, 0);
+    ESP_LOGI("MOTOR", "Coast");
 }

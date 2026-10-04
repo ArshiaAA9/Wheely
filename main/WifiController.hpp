@@ -1,18 +1,20 @@
 #pragma once
+#include "esp_event.h"
 #include "esp_wifi.h"
-#include "esp_wifi_types_generic.h"
+
+#define WIFI_SSID CONFIG_ESP_WIFI_SSID
+#define WIFI_PASSWORD CONFIG_ESP_WIFI_PASSWORD
+#define WIFI_MAXIMUM_RETRY CONFIG_ESP_MAXIMUM_RETRY
 
 class WifiController {
-    WifiController() {
-        esp_netif_init();
-        esp_event_loop_create_default();
+public:
+    WifiController();
+    WifiController(const WifiController&) = delete;
+    WifiController& operator=(const WifiController&) = delete;
+    ~WifiController();
 
-        esp_netif_create_default_wifi_sta();
-
-        wifi_init_config_t cfg = wifi_init_config_t();
-        esp_wifi_init(&cfg);
-        esp_wifi_set_mode(WIFI_MODE_STA);
-        esp_wifi_start();
-        esp_wifi_connect();
-    }
+private:
+    static void eventHandler(void* arg, esp_event_base_t eventBase, int32_t eventId, void* eventData);
+    static constexpr char TAG[] = "WIFI";
+    int m_retryCount = 0;
 };

@@ -24,7 +24,7 @@ public:
         TurnRight,
         TurnLeft,
 
-        Break,
+        Brake,
         Coast,
 
     };
@@ -34,6 +34,8 @@ public:
     void Reverse();
     void TurnRight();
     void TurnLeft();
+    void Brake();
+    void Coast();
 
     void setSpeedToMax();
 

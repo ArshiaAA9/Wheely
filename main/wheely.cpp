@@ -1,7 +1,10 @@
 #include <cstdio>
 
 #include "TB6612.hpp"
+#include "TCPServer.hpp"
+#include "WifiController.hpp"
 #include "freertos/FreeRTOS.h"
+#include "nvs_flash.h"
 
 constexpr gpio_num_t AIN1 = GPIO_NUM_18;
 constexpr gpio_num_t AIN2 = GPIO_NUM_17;
@@ -13,6 +16,10 @@ constexpr gpio_num_t PWMB = GPIO_NUM_14;
 constexpr gpio_num_t STBY = GPIO_NUM_19;
 
 extern "C" void app_main(void) {
+    ESP_ERROR_CHECK(nvs_flash_init());
+
+    static WifiController wifiController{};
+
     TB6612Pins motorsPins{};
     motorsPins.AIN1 = AIN1;
     motorsPins.AIN2 = AIN2;
@@ -23,8 +30,9 @@ extern "C" void app_main(void) {
     motorsPins.STBY = STBY;
 
     TB6612 motors{motorsPins};
-    motors.TurnRight();
     motors.setSpeedToMax();
+    static TCPServer server{motors};
+    server.StartListening();
 
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(100));
