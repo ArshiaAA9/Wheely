@@ -47,7 +47,7 @@ void TB6612::init() {
     gpio_set_level(m_pins.STBY, 1);
 }
 
-void TB6612::setSpeedToMax() {
+void TB6612::SetSpeedToMax() {
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, m_MAX_DUTY);
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, m_MAX_DUTY);
 

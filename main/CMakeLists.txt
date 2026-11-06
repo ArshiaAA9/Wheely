@@ -4,10 +4,16 @@ idf_component_register(
         "TB6612.cpp"
         "WifiController.cpp"
         "TCPServer.cpp"
+        "WebServer.cpp"
+        "HC-SRO4.cpp"
+        "RobotHardware.cpp"
     INCLUDE_DIRS "."
     PRIV_REQUIRES
         esp_driver_gpio
         esp_driver_ledc
         esp_wifi
         nvs_flash
+        esp_http_server
+        esp_timer
+        esp_driver_i2c
 )
