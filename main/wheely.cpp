@@ -1,9 +1,9 @@
-#include <cstdio>
-
 #include "Robot.hpp"
 #include "TB6612.hpp"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "nvs_flash.h"
 #include "soc/gpio_num.h"
 
@@ -82,6 +82,9 @@ extern "C" void app_main(void) {
         {
             Robot robot{pins};
 
+            robot.Screen.Clear();
+            robot.Screen.DrawHeart(64, 34, 30);
+            robot.Screen.Show();
             vTaskDelay(pdMS_TO_TICKS(1000)); // let go of the board
             robot.Gyroscope.Calibrate();
 

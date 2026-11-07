@@ -42,9 +42,10 @@ public:
         }
     }
 
-    void Calibrate(int samples = 500); // robot must be perfectly still
-    void ResetYaw();                   // zero the heading
-    void Update();                     // call every ~5-10 ms
+    void Calibrate(int samples = 500);    // robot must be perfectly still
+    void ResetYaw();                      // zero the heading
+    void Update();                        // call every ~5-10 ms
+    void ReadAccel(float& ax, float& ay); // in g
 
     float YawDeg() const { return m_yaw; }
 

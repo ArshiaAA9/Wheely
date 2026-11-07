@@ -8,6 +8,7 @@ idf_component_register(
         "HC-SRO4.cpp"
         "Robot.cpp"
         "MPU6050.cpp"
+        "SSD1306.cpp"
     INCLUDE_DIRS "."
     PRIV_REQUIRES
         esp_driver_gpio

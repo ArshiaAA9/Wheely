@@ -23,7 +23,6 @@ public:
 
         Brake,
         Coast,
-
     };
 
     // movement methods
@@ -35,6 +34,26 @@ public:
     void Coast();
 
     void SetSpeedToMax();
+
+    MotionState State();
+
+    static const char* ToString(MotionState s) {
+        switch (s) {
+            case MotionState::Forward:
+                return "Forward";
+            case MotionState::Reverse:
+                return "Reverse";
+            case MotionState::TurnLeft:
+                return "Turn left";
+            case MotionState::TurnRight:
+                return "Turn right";
+            case MotionState::Brake:
+                return "Brake";
+            case MotionState::Coast:
+                return "Coast";
+        }
+        return "?";
+    }
 
     TB6612(const TB6612::Pins& pins)
         : m_pins(pins) {

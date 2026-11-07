@@ -35,6 +35,15 @@ void MPU6050::Update() {
     }
 }
 
+void MPU6050::ReadAccel(float& ax, float& ay) {
+    uint8_t reg = 0x3B; // ACCEL_XOUT_H
+    uint8_t b[4];       // X high/low, Y high/low
+    ESP_ERROR_CHECK(i2c_master_transmit_receive(m_dev, &reg, 1, b, 4, 100));
+    ax = static_cast<int16_t>((b[0] << 8) | b[1]) / 16384.0f; // default ±2 g range
+    ay = static_cast<int16_t>((b[2] << 8) | b[3]) / 16384.0f;
+    ax = -ax; // board is upside down: X is mirrored (flip if it moves the wrong way)
+}
+
 void MPU6050::writeReg(uint8_t reg, uint8_t val) {
     uint8_t data[2] = {reg, val};
     ESP_ERROR_CHECK(i2c_master_transmit(m_dev, data, 2, 100));

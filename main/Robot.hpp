@@ -3,6 +3,7 @@
 
 #include "HC-SRO4.hpp"
 #include "MPU6050.hpp"
+#include "SSD1306.hpp"
 #include "TB6612.hpp"
 #include "esp_log.h"
 #include "soc/gpio_num.h"
@@ -20,7 +21,8 @@ public:
         : I2cBus(createBus(pins.SDA, pins.SCL))
         , Motors(pins.TB6612Pins)
         , Sonar(pins.HC_SRO4Pins)
-        , Gyroscope(I2cBus) {
+        , Gyroscope(I2cBus)
+        , Screen(I2cBus) {
 
         Motors.SetSpeedToMax();
     }
@@ -40,9 +42,17 @@ public:
     TB6612 Motors;
     HC_SRO4 Sonar;
     MPU6050 Gyroscope;
+    SSD1306 Screen;
 
 private:
     static i2c_master_bus_handle_t createBus(gpio_num_t sda, gpio_num_t scl);
     static float wrap180(float a);
     bool turnToHeading(float targetDeg, std::atomic<bool>& isRunning);
+    void UpdateScreen(const char* mode);
+
+    int64_t m_lastPingUs = 0;
+    int m_closeCount = 0;
+    bool m_moving = false;
+    int64_t m_lastScreenUs = 0;
+    float m_lastDistance = 0;
 };

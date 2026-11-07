@@ -55,6 +55,8 @@ void TB6612::SetSpeedToMax() {
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
 }
 
+TB6612::MotionState TB6612::State() { return m_state; }
+
 void TB6612::Forward() {
     m_state = MotionState::Forward;
     gpio_set_level(m_pins.AIN1, 1);

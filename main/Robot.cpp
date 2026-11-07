@@ -4,6 +4,8 @@
 #include <cmath>
 
 #include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 float Robot::scan360(std::atomic<bool>& isRunning) {
     constexpr int BIN_DEG = 10;
@@ -30,6 +32,7 @@ float Robot::scan360(std::atomic<bool>& isRunning) {
 
             float yaw = Gyroscope.YawDeg(); // sample the angle at the ping
             float d = Sonar.MeasureDistanceCM();
+            m_lastDistance = d;
             if (d < 0) d = NO_ECHO_CM;
             d = std::min(d, NO_ECHO_CM);
 
@@ -39,6 +42,7 @@ float Robot::scan360(std::atomic<bool>& isRunning) {
                 seen[bin] = true;
             }
         }
+        UpdateScreen("Scanning"); // refreshes at most every 500 ms
         vTaskDelay(pdMS_TO_TICKS(5));
     }
     Motors.Brake();
@@ -63,19 +67,61 @@ void Robot::Drive(std::atomic<bool>& isRunning) {
     // thsi function is ran every tick of the robot
     // measurs distance, if too close turn check those direction and move in the
     // empty direction units are in CM
-    Gyroscope.Update();
-    float distance = Sonar.MeasureDistanceCM();
 
-    if (distance > 0 && distance <= 20.0f) {
-        // make a 360 turn and go in the direction with highest distance
+    constexpr float STOP_CM = 20.0f;
+    constexpr int64_t PING_GAP_US = 60'000;
+
+    Gyroscope.Update(); // keep yaw current every call
+
+    const int64_t now = esp_timer_get_time();
+    if (now - m_lastPingUs < PING_GAP_US) {
+        return; // too soon to ping, keep doing what we're doing
+    }
+    m_lastPingUs = now;
+
+    float distance = Sonar.MeasureDistanceCM();
+    m_lastDistance = distance;
+    UpdateScreen("Driving");
+
+    bool tooClose = (distance > 0 && distance <= STOP_CM);
+
+    // Require 2 close readings in a row, so one glitch doesn't trigger a scan
+    m_closeCount = tooClose ? m_closeCount + 1 : 0;
+
+    if (m_closeCount >= 2) {
+        m_closeCount = 0;
+        m_moving = false;
+        Motors.Brake();
+
         float best = scan360(isRunning);
         if (!isRunning) return;
 
         float current = Gyroscope.YawDeg();
         float delta = wrap180(best - std::fmod(current, 360.0f));
         turnToHeading(current + delta, isRunning);
+        return;
     }
-    Motors.Forward();
+
+    if (!m_moving) { // only send the command once
+        Motors.Forward();
+        m_moving = true;
+    }
+}
+
+void Robot::UpdateScreen(const char* mode) {
+    int64_t now = esp_timer_get_time();
+    if (now - m_lastScreenUs < 500'000) return;
+    m_lastScreenUs = now;
+
+    char line[24];
+    Screen.Clear();
+    snprintf(line, sizeof(line), "Dist: %.0f cm", m_lastDistance);
+    Screen.Print(0, 0, line);
+    snprintf(line, sizeof(line), "Yaw:  %.0f deg", Gyroscope.YawDeg());
+    Screen.Print(0, 16, line);
+    snprintf(line, sizeof(line), "Mode: %s", mode);
+    Screen.Print(0, 32, line);
+    Screen.Show();
 }
 
 i2c_master_bus_handle_t Robot::createBus(gpio_num_t sda, gpio_num_t scl) {
@@ -100,7 +146,6 @@ float Robot::wrap180(float a) {
 
 bool Robot::turnToHeading(float targetDeg, std::atomic<bool>& isRunning) {
     constexpr float HEADING_TOLERANCE_DEG = 3.0f; // "close enough"
-    constexpr float SLOW_ZONE_DEG = 30.0f;        // start slowing within this error
     constexpr int64_t TURN_TIMEOUT_US = 8'000'000;
 
     const int64_t start = esp_timer_get_time();
@@ -115,11 +160,11 @@ bool Robot::turnToHeading(float targetDeg, std::atomic<bool>& isRunning) {
             return true;
         }
 
-        bool fast = std::fabs(err) > SLOW_ZONE_DEG;
         if (err > 0) Motors.TurnLeft(); // CCW, yaw increases
         else
             Motors.TurnRight(); // CW, yaw decreases
-
+                                //
+        if (std::fabs(err) > 15.0f) UpdateScreen("Turning");
         vTaskDelay(pdMS_TO_TICKS(5));
     }
 
