@@ -2,9 +2,6 @@ idf_component_register(
     SRCS
         "wheely.cpp"
         "TB6612.cpp"
-        "WifiController.cpp"
-        "TCPServer.cpp"
-        "WebServer.cpp"
         "HC-SRO4.cpp"
         "Robot.cpp"
         "MPU6050.cpp"
