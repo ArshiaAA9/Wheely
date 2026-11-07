@@ -1,13 +1,9 @@
 #include <cstdio>
 
-#include "DriveController.hpp"
-#include "HC-SRO4.hpp"
+#include "Robot.hpp"
 #include "TB6612.hpp"
-#include "TCPServer.hpp"
-#include "WebServer.hpp"
-#include "WifiController.hpp"
 #include "esp_log.h"
-#include "freertos/FreeRTOS.h"
+#include "esp_timer.h"
 #include "nvs_flash.h"
 #include "soc/gpio_num.h"
 
@@ -23,10 +19,45 @@ constexpr gpio_num_t STBY = GPIO_NUM_19;
 constexpr gpio_num_t TRIGGER = GPIO_NUM_25;
 constexpr gpio_num_t ECHO = GPIO_NUM_33;
 
+constexpr gpio_num_t SDA = GPIO_NUM_21;
+constexpr gpio_num_t SCL = GPIO_NUM_22;
+
+constexpr gpio_num_t START_BTN = GPIO_NUM_35;
+
+static std::atomic<bool> isRunning{false};
+
+static void buttonTask(void*) {
+    bool lastLevel = false;
+    int64_t lastChangeUs = 0;
+
+    ESP_LOGI("Main", "Waiting for button input");
+    while (true) {
+        bool level = gpio_get_level(START_BTN) == 1;
+        int64_t now = esp_timer_get_time();
+
+        if (level != lastLevel && now - lastChangeUs > 50'000) {
+            lastChangeUs = now;
+            lastLevel = level;
+            if (level) { // pressed
+                isRunning = !isRunning;
+                if (isRunning) {
+                    ESP_LOGI("Main", "START");
+                } else {
+                    ESP_LOGI("Main", "STOP");
+                }
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+// in app_main, after configuring the pin:
+
 extern "C" void app_main(void) {
     ESP_ERROR_CHECK(nvs_flash_init());
+    ESP_ERROR_CHECK(gpio_set_direction(START_BTN, GPIO_MODE_INPUT));
 
-    static WifiController wifiController{};
+    // static WifiController wifiController{};
 
     TB6612::Pins motorsPins{};
     motorsPins.AIN1 = AIN1;
@@ -37,15 +68,28 @@ extern "C" void app_main(void) {
     motorsPins.PWMB = PWMB;
     motorsPins.STBY = STBY;
 
-    DriveController driver{};
+    Robot::Pins pins{motorsPins, {TRIGGER, ECHO}, SDA, SCL};
 
-    // static TCPServer server{motors};
-    // server.StartListening();
-    //
-    // static WebServer web{motors};
-    // ESP_ERROR_CHECK(web.Start());
+    // wait for start button
+    xTaskCreate(buttonTask, "button", 2048, nullptr, 5, nullptr);
 
     while (true) {
-        vTaskDelay(pdMS_TO_TICKS(100));
+        if (!isRunning) {
+            vTaskDelay(pdMS_TO_TICKS(20)); // idle, waiting for a press
+            continue;
+        }
+
+        {
+            Robot robot{pins};
+
+            vTaskDelay(pdMS_TO_TICKS(1000)); // let go of the board
+            robot.Gyroscope.Calibrate();
+
+            while (isRunning) {
+                robot.Drive(isRunning);
+                vTaskDelay(pdMS_TO_TICKS(5));
+            }
+        } // robot destroyed here
+        ESP_LOGI("Main", "Loop exited");
     }
 }

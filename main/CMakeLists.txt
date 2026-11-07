@@ -6,7 +6,8 @@ idf_component_register(
         "TCPServer.cpp"
         "WebServer.cpp"
         "HC-SRO4.cpp"
-        "RobotHardware.cpp"
+        "Robot.cpp"
+        "MPU6050.cpp"
     INCLUDE_DIRS "."
     PRIV_REQUIRES
         esp_driver_gpio
